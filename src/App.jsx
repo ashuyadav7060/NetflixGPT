@@ -1,7 +1,8 @@
+import Body from "./components/Body";
 function App() {
   return (
     <>
-      <div className="text-4xl text-blue-800">Nmaste everyone</div>
+      <Body></Body>
     </>
   );
 }
