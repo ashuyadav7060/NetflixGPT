@@ -1,12 +1,94 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Header from "./Header";
+import { checkValidate } from "../utils/validate";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  updateProfile,
+} from "firebase/auth";
+import { auth } from "../utils/firebase";
+import { useNavigate } from "react-router-dom";
+
 const Login = () => {
   const [signup, setsignup] = useState(false);
+  const [errorMessage, seterrorMessage] = useState(null);
+  const navigate = useNavigate();
+  const email = useRef(null);
+  const password = useRef(null);
+  const name = useRef(null);
+
   const handlesignup = () => {
     setsignup(!signup);
   };
   const handlesignin = () => {
     setsignup(!signup);
+  };
+  const handleButtonClick = () => {
+    const emailValue = email.current ? email.current.value : "";
+    const passwordValue = password.current ? password.current.value : "";
+    const nameValue = signup && name.current ? name.current.value : "";
+
+    const message = checkValidate(emailValue, passwordValue, nameValue, signup);
+    seterrorMessage(message);
+
+    if (message) return;
+
+    //signin and signup logic
+
+    if (signup) {
+      // signup logic
+      createUserWithEmailAndPassword(
+        auth,
+        email.current.value,
+        password.current.value
+      )
+        .then((userCredential) => {
+          const user = userCredential.user;
+          updateProfile(user, {
+            displayName: name.current.value,
+          })
+            .then(() => {
+              const { uid, displayName, email } = auth.currentUser;
+
+              dispatch(
+                Useractions.addUser({
+                  uid: uid,
+                  displayName: displayName,
+                  email: email,
+                })
+              );
+
+              navigate("/browse");
+            })
+
+            .catch((error) => {
+              seterrorMessage(error.message);
+            });
+        })
+        .catch((error) => {
+          const errorCode = error.code;
+          const errorMessage = error.message;
+          seterrorMessage(errorCode + "-" + errorMessage);
+          // ..
+        });
+    } else {
+      // signin logic
+      signInWithEmailAndPassword(
+        auth,
+        email.current.value,
+        password.current.value
+      )
+        .then((userCredential) => {
+          const user = userCredential.user;
+          console.log(user);
+          navigate("/browse");
+        })
+        .catch((error) => {
+          const errorCode = error.code;
+          const errorMessage = error.message;
+          seterrorMessage(errorCode + "-" + errorMessage);
+        });
+    }
   };
   return (
     <>
@@ -17,12 +99,16 @@ const Login = () => {
           alt=" Ashu"
         />
       </div>
-      <form className=" absolute p-12 bg-black w-100  my-24 mx-auto right-0 left-0 text-white gap-10 opacity-80">
+      <form
+        onSubmit={(e) => e.preventDefault()}
+        className=" absolute p-12 bg-black w-100  my-24 mx-auto right-0 left-0 text-white gap-10 opacity-80"
+      >
         <h1 className="text-white my-2 text-3xl font-high font-bold ">
           {signup ? "Sign Up" : "Sign In"}
         </h1>
         {signup ? (
           <input
+            ref={name}
             className="p-3 my-3  w-76   rounded  bg-black opacity-40 border-1 placeholder-white"
             type="text"
             placeholder="Enter your Name"
@@ -32,18 +118,25 @@ const Login = () => {
         )}
 
         <input
+          ref={email}
           className="p-3 my-3  w-76   rounded  bg-black opacity-40 border-1 placeholder-white"
           type="text"
           placeholder="Email or Mobile Number"
         />
         <input
+          ref={password}
           className="p-3  w-76 rounded bg-black opacity-40 border-1  placeholder-white"
           type="password"
           placeholder="Password"
         />
-        <button className="w-76 my-3 text-white p-2 m  font-medium  bg-red-600 rounded cursor-pointer hover:bg-red-800">
+        <p className="text-red-500 font-bold text-lg py-3">{errorMessage}</p>
+        <button
+          className="w-76 my-3 text-white p-2 m  font-medium  bg-red-600 rounded cursor-pointer hover:bg-red-800"
+          onClick={handleButtonClick}
+        >
           {signup ? "Sign Up" : "Sign In"}
         </button>
+
         {signup ? (
           <>
             <p className="py-4  ">
