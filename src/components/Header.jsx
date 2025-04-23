@@ -2,24 +2,50 @@ import { FaUserCircle } from "react-icons/fa";
 import { auth } from "../utils/firebase";
 import { signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { useEffect } from "react";
+import { onAuthStateChanged } from "firebase/auth";
+import { Useractions } from "../utils/userSlice";
 
 const Header = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const user = useSelector((store) => store.user);
 
   const handleSignOut = () => {
     signOut(auth)
       .then(() => {
         // Sign-out successful.
-
-        navigate("/");
       })
       .catch((error) => {
         // An error happened.
         navigate("/error");
       });
   };
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // User is signed in, see docs for a list of available properties
+        // https://firebase.google.com/docs/reference/js/auth.user
+        const { uid, displayName, email } = user;
+        dispatch(
+          Useractions.addUser({
+            uid: uid,
+            displayName: displayName,
+            email: email,
+          })
+        );
+        navigate("/browse");
+      } else {
+        // User is signed out
+        dispatch(Useractions.removeUser());
+        navigate("/");
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
   return (
     <>
       <div className="absolute px-8 py-2 w-full bg-gradient-to-b from-black z-30 flex justify-between">
