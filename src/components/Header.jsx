@@ -6,6 +6,9 @@ import { useDispatch, useSelector } from "react-redux";
 import { useEffect } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { Useractions } from "../utils/userSlice";
+import { gptsliceactions } from "../utils/gptSlice";
+import { SUPPORDTED_LANGUAGES } from "../utils/constant";
+import { configactions } from "../utils/configSlice";
 
 const Header = () => {
   const navigate = useNavigate();
@@ -46,6 +49,16 @@ const Header = () => {
     return () => unsubscribe();
   }, []);
 
+  const handlegptsearch = () => {
+    dispatch(gptsliceactions.toggleGptSearchView());
+  };
+
+  const handleLanguageChange = (e) => {
+    dispatch(configactions.changelang(e.target.value));
+  };
+
+  const showgptsearch = useSelector((store) => store.gpt.showGptSearch);
+
   return (
     <>
       <div className="absolute px-8 py-2 w-full bg-gradient-to-b from-black z-30 flex justify-between">
@@ -56,10 +69,28 @@ const Header = () => {
         />
         {user && (
           <div className="flex p-4 ">
-            <FaUserCircle className="w-8 h-8" />
+            {showgptsearch ? (
+              <select
+                className="bg-gray-900 text-white  rounded-2xl m-2 p-2  "
+                onChange={handleLanguageChange}
+              >
+                {SUPPORDTED_LANGUAGES.map((lang) => (
+                  <option value={lang.identifier}> {lang.name}</option>
+                ))}
+              </select>
+            ) : (
+              <></>
+            )}
+            <button
+              onClick={handlegptsearch}
+              className="py-2 px-4 m-2 bg-purple-500 rounded cursor-pointer mr-20 text-white"
+            >
+              {showgptsearch ? "Home Page" : "GPT Search "}
+            </button>
+            <FaUserCircle className="w-8 h-8 bg-white rounded-3xl mr-5" />
             <button
               onClick={handleSignOut}
-              className="bg-red-700 text-white px-2 rounded font-medium cursor-pointer"
+              className="bg-red-700 text-white h-11 px-4 rounded font-medium cursor-pointer"
             >
               Sign Out
             </button>
